@@ -1,0 +1,8 @@
+name: safepool.ch
+configs:
+  - s3:
+      endpoint: s3.eu-central-1.amazonaws.com
+      bucket: mightybuck3t
+      region: eu-central-1
+      accessKey: AKIASL24JQ3ILBQ4U6GU
+      secret: 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

@@ -12,13 +12,13 @@ import (
 
 func printChatHelp() {
 	color.White("commands: ")
-	color.White("  \\r refresh chat content")
-	color.White("  \\m ")
-	color.White("  \\x back to App list")
+	color.White("  '' once refresh chat content")
+	color.White("  '' twice back to App list")
 }
 
 func Chat(p *pool.Pool) {
 	var lastId uint64
+	var lastInput string
 	c := chat.Get(p)
 
 	identities, err := p.Identities()
@@ -29,12 +29,14 @@ func Chat(p *pool.Pool) {
 
 	id2nick := map[string]string{}
 	for _, i := range identities {
-		id2nick[i.Identity.Id()] = i.Nick
+		id2nick[i.Id()] = i.Nick
 	}
 
 	selfId := p.Self.Id()
 	color.Green("Enter \\? for list of commands")
 	for {
+		p.Sync()
+
 		messages, err := c.GetMessages(lastId, math.MaxInt64, 32)
 		if err != nil {
 			color.Red("cannot retrieve chat messages from pool '%s': %v", p.Name)
@@ -46,7 +48,9 @@ func Chat(p *pool.Pool) {
 			} else {
 				color.Green("%s: %s", id2nick[m.Author], m.Content)
 			}
-			lastId = m.Id
+			if m.Id > lastId {
+				lastId = m.Id
+			}
 		}
 		prompt := promptui.Prompt{
 			Label:       "> ",
@@ -57,11 +61,12 @@ func Chat(p *pool.Pool) {
 		t = strings.Trim(t, " ")
 
 		switch {
+		case len(t) == 0 && lastInput == "":
+			return
 		case len(t) == 0:
+			lastInput = t
 		case strings.HasPrefix(t, "\\?"):
 			printChatHelp()
-		case strings.HasPrefix(t, "\\x"):
-			return
 		case strings.HasPrefix(t, "\\"):
 			printChatHelp()
 		default:

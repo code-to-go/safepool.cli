@@ -4,6 +4,7 @@ import (
 	"github.com/code-to-go/safepool.lib/api"
 	"github.com/code-to-go/safepool.lib/core"
 	"github.com/code-to-go/safepool.lib/pool"
+	"github.com/code-to-go/safepool.lib/security"
 	"github.com/fatih/color"
 	"github.com/manifoldco/promptui"
 )
@@ -12,7 +13,7 @@ func AddExisting() {
 
 	for {
 		prompt := promptui.Prompt{
-			Label:       "Token from your host. Empty to cancel",
+			Label:       "Token from your host",
 			HideEntered: true,
 		}
 
@@ -21,8 +22,18 @@ func AddExisting() {
 			return
 		}
 
-		token, err := pool.DecodeToken(&api.Self, t)
+		token, err := pool.DecodeToken(api.Self.Id(), t)
 		if core.IsErr(err, "invalid token: %v") {
+			continue
+		}
+
+		err = security.SetIdentity(token.Host)
+		if core.IsErr(err, "cannot save identity '%s': %v", token.Host.Nick) {
+			continue
+		}
+
+		err = security.Trust(token.Host, true)
+		if core.IsErr(err, "cannot trust identity '%s': %v", token.Host.Nick) {
 			continue
 		}
 
@@ -30,7 +41,8 @@ func AddExisting() {
 			continue
 		}
 
-		color.Green("Pool %s added. Host %s is trusted", token.Config.Name, token.Host.Nick)
+		color.Green("Pool %s added. Host '%s' is trusted", token.Config.Name, token.Host.Nick)
+		return
 	}
 
 }

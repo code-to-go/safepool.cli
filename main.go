@@ -1,71 +1,38 @@
 package main
 
 import (
+	"flag"
+
 	"github.com/code-to-go/safepool.lib/api"
-	"github.com/code-to-go/safepool.lib/pool"
-	"github.com/fatih/color"
-	"github.com/manifoldco/promptui"
+	"github.com/code-to-go/safepool.lib/sql"
 	"github.com/sirupsen/logrus"
 )
 
-func selectPool() {
-	for {
-		pools := pool.List()
+func parseFlags() {
+	var verbose int
+	var dbname string
 
-		items := []string{"Add", "Settings", "Exit"}
-		items = append(items, pools...)
-		prompt := promptui.Select{
-			Label: "Choose",
-			Items: items,
-		}
+	flag.IntVar(&verbose, "v", 0, "verbose level - 0 to 2")
+	flag.StringVar(&dbname, "d", "", "location of the SQLlite DB")
+	flag.Parse()
 
-		idx, _, _ := prompt.Run()
-		switch idx {
-		case 0:
-			AddExisting()
-		case 1:
-			Settings()
-		case 2:
-			return
-		default:
-			ChooseFunction(items[idx])
-		}
+	switch verbose {
+	case 0:
+		logrus.SetLevel(logrus.FatalLevel)
+	case 1:
+		logrus.SetLevel(logrus.InfoLevel)
+	case 2:
+		logrus.SetLevel(logrus.DebugLevel)
 	}
-}
 
-func ChooseFunction(poolName string) {
-	p, err := pool.Open(api.Self, poolName)
-	if err != nil {
-		color.Red("cannot open pool '%s': %v", err)
+	if dbname != "" {
+		sql.DbName = dbname
 	}
-	defer p.Close()
-
-	for {
-		items := []string{"Chat", "Library", "Cancel"}
-		prompt := promptui.Select{
-			Label: "Choose App",
-			Items: items,
-		}
-
-		idx, _, _ := prompt.Run()
-		switch idx {
-		case 0:
-			Chat(p)
-		case 1:
-			Library(p)
-		default:
-			return
-		}
-	}
-}
-
-func Settings() {
-	key, _ := api.Self.Public().Base64()
-	color.Green("Public Key: %s", key)
 }
 
 func main() {
-	logrus.SetLevel(logrus.FatalLevel)
+
+	parseFlags()
 	api.Start()
-	selectPool()
+	SelectMain()
 }
