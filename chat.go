@@ -35,8 +35,6 @@ func Chat(p *pool.Pool) {
 	selfId := p.Self.Id()
 	color.Green("Enter \\? for list of commands")
 	for {
-		p.Sync()
-
 		messages, err := c.GetMessages(lastId, math.MaxInt64, 32)
 		if err != nil {
 			color.Red("cannot retrieve chat messages from pool '%s': %v", p.Name)

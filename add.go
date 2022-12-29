@@ -22,7 +22,7 @@ func AddExisting() {
 			return
 		}
 
-		token, err := pool.DecodeToken(api.Self.Id(), t)
+		token, err := pool.DecodeToken(api.Self, t)
 		if core.IsErr(err, "invalid token: %v") {
 			continue
 		}
